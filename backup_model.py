@@ -267,6 +267,10 @@ class Backup(jg.GrammarModel):
             result = result
         else:
             result = result and self.omniports == other.omniports
+        if self.description is None or other.description is None:
+            result = result
+        else:
+            result = result and self.description == other.description
         result = (result and self.banks == other.banks and
                   self.midi_channel == other.midi_channel)
         # Debugging: set a breakpoint on the self.modified line to discovery where two items differ

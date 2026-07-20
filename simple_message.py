@@ -14,6 +14,21 @@ import engage_preset_message
 # TODO: chain in from_backup.
 # TODO: As I implement each message type in intuitive, I am moving messages into their own files/classes
 
+
+# Compares two "extra bytes" lists (trailing-default bytes not otherwise modeled), tolerating a
+# length difference, since the minimal grammar truncates trailing default (None) entries when
+# writing the simple config, and a reloaded list is not padded back out to full length.
+def extra_data_equal(list_a, list_b):
+    list_a = list_a or []
+    list_b = list_b or []
+    length = max(len(list_a), len(list_b))
+    for pos in range(length):
+        value_a = list_a[pos] if pos < len(list_a) else None
+        value_b = list_b[pos] if pos < len(list_b) else None
+        if value_a != value_b:
+            return False
+    return True
+
 simple_message_type = ["unused", "PC", "CC", "Note On", "Note Off",
                        "Real Time", "SysEx", "MIDI Clock", "message8",
                        "message9", "Bank Up", "Bank Down", "Bank Change Mode",
@@ -635,7 +650,8 @@ class MIDIClockModel(jg.GrammarModel):
 
     def __eq__(self, other):
         result = isinstance(other, MIDIClockModel) and self.stop_clock == other.stop_clock and self.bpm == other.bpm
-        result = result and self.bpm_decimal == other.bpm_decimal and self.extra_data == other.extra_data
+        result = result and self.bpm_decimal == other.bpm_decimal
+        result = result and extra_data_equal(self.extra_data, other.extra_data)
         if not result:
             self.modified = True
         return result
@@ -671,7 +687,7 @@ class MIDIClockModel(jg.GrammarModel):
                 name.append(self.bpm_decimal)
             rest = backup_message.msg_array_data[3:18]
             if any(byte is not None for byte in rest):
-                self.extra_data = [byte if byte is not None else 0 for byte in rest]
+                self.extra_data = list(rest)
         return ':'.join(name)
 
     def to_backup(self, backup_message, _bank_catalog, _simple_bank, _simple_preset):
@@ -1317,7 +1333,7 @@ class SetToggleModel(jg.GrammarModel):
 
     def __eq__(self, other):
         result = (isinstance(other, SetToggleModel) and self.position == other.position and
-                  self.presets == other.presets and self.extra_data == other.extra_data)
+                  self.presets == other.presets and extra_data_equal(self.extra_data, other.extra_data))
         if not result:
             self.modified = True
         return result
@@ -1351,7 +1367,7 @@ class SetToggleModel(jg.GrammarModel):
             name += ','.join(self.presets)
             rest = backup_message.msg_array_data[4:18]
             if any(byte is not None for byte in rest):
-                self.extra_data = [byte if byte is not None else 0 for byte in rest]
+                self.extra_data = list(rest)
         return name
 
     def from_backup_presets(self, backup_message, backup_bank):
