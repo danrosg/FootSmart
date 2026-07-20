@@ -66,6 +66,7 @@ class SimplePreset(jg.GrammarModel):
         self.short_name = None
         self.long_name = None
         self.toggle_name = None
+        self.shift_name = None
         self.message_scroll = None
         self.text = None
         self.text_toggle = None
@@ -82,6 +83,7 @@ class SimplePreset(jg.GrammarModel):
     def __eq__(self, other):
         result = (isinstance(other, SimplePreset) and self.short_name == other.short_name and
                   self.long_name == other.long_name and self.toggle_name == other.toggle_name and
+                  self.shift_name == other.shift_name and
                   self.message_scroll == other.message_scroll and
                   self.text == other.text and self.text_toggle == other.text_toggle and
                   self.text_shift == other.text_shift and self.background == other.background and
@@ -98,6 +100,7 @@ class SimplePreset(jg.GrammarModel):
         self.short_name = backup_preset.short_name
         self.long_name = backup_preset.long_name
         self.toggle_name = backup_preset.toggle_name
+        self.shift_name = backup_preset.shift_name
         self.toggle_group = backup_preset.toggle_group
         if backup_preset.to_msg_scroll is not None and backup_preset.to_msg_scroll:
             self.message_scroll = "On"
@@ -130,6 +133,7 @@ class SimplePreset(jg.GrammarModel):
         backup_preset.short_name = self.short_name
         backup_preset.long_name = self.long_name
         backup_preset.toggle_name = self.toggle_name
+        backup_preset.shift_name = self.shift_name
         backup_preset.toggle_group = self.toggle_group
         if self.message_scroll is not None and self.message_scroll == "On":
             backup_preset.to_msg_scroll = True

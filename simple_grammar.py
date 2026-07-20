@@ -32,6 +32,8 @@ preset_schema = \
                               jg.Atom('Long Name', str, '', var='long_name')),
              jg.Dict.make_key('toggle_name',
                               jg.Atom('Toggle Name', str, '', var='toggle_name')),
+             jg.Dict.make_key('shift_name',
+                              jg.Atom('Shift Name', str, '', var='shift_name')),
              jg.Dict.make_key('toggle_mode',
                               jg.Atom('Toggle Mode', bool, False, var='toggle_mode')),
              jg.Dict.make_key('toggle_group',

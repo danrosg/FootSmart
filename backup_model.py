@@ -89,6 +89,7 @@ class Preset(jg.GrammarModel):
         self.short_name = None
         self.toggle_name = None
         self.long_name = None
+        self.shift_name = None
         self.name_color = None
         self.name_toggle_color = None
         self.shifted_name_color = None
@@ -106,6 +107,7 @@ class Preset(jg.GrammarModel):
                   self.short_name == other.short_name and
                   self.toggle_name == other.toggle_name and
                   self.long_name == other.long_name and
+                  self.shift_name == other.shift_name and
                   self.name_color == other.name_color and
                   self.shifted_name_color == other.shifted_name_color and
                   self.name_toggle_color == other.name_toggle_color and
@@ -205,11 +207,43 @@ class BankArrangementItem(jg.GrammarModel):
 
 
 # Model for the entire backup/config file
+class Omniport(jg.GrammarModel):
+    def __init__(self):
+        super().__init__('Omniport')
+        self.type = None
+        self.fixed_sw_tip = None
+        self.fixed_sw_ring = None
+        self.fixed_sw_tip_ring = None
+        self.td1 = None
+        self.td2 = None
+        self.rd1 = None
+        self.rd2 = None
+        self.trd1 = None
+        self.trd2 = None
+
+    def __eq__(self, other):
+        result = (isinstance(other, Omniport) and
+                  self.type == other.type and
+                  self.fixed_sw_tip == other.fixed_sw_tip and
+                  self.fixed_sw_ring == other.fixed_sw_ring and
+                  self.fixed_sw_tip_ring == other.fixed_sw_tip_ring and
+                  self.td1 == other.td1 and
+                  self.td2 == other.td2 and
+                  self.rd1 == other.rd1 and
+                  self.rd2 == other.rd2 and
+                  self.trd1 == other.trd1 and
+                  self.trd2 == other.trd2)
+        if not result:
+            self.modified = True
+        return result
+
+
 class Backup(jg.GrammarModel):
     def __init__(self):
         super().__init__('Backup')
         self.hash = None
         self.download_date = None
+        self.description = None
         self.banks = None
         # Midi Channels
         self.midi_channels = None
@@ -217,6 +251,8 @@ class Backup(jg.GrammarModel):
         self.bank_arrangement = None
         # General Configuration
         self.midi_channel = None
+        # Omniport (expression/aux jack) configuration
+        self.omniports = None
 
     def __eq__(self, other):
         if self.bank_arrangement is None or other.bank_arrangement is None:
@@ -227,6 +263,14 @@ class Backup(jg.GrammarModel):
             result = True
         else:
             result = result and self.midi_channels == other.midi_channels
+        if self.omniports is None or other.omniports is None:
+            result = result
+        else:
+            result = result and self.omniports == other.omniports
+        if self.description is None or other.description is None:
+            result = result
+        else:
+            result = result and self.description == other.description
         result = (result and self.banks == other.banks and
                   self.midi_channel == other.midi_channel)
         # Debugging: set a breakpoint on the self.modified line to discovery where two items differ

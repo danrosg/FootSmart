@@ -45,7 +45,7 @@ def mk_preset_array_schema(is_exp):
                     jg.Dict.make_key('shortName', jg.Atom('Short Name', str, 'EMPTY', var='short_name')),
                     jg.Dict.make_key('toggleName', jg.Atom('Toggle Name', str, '', var='toggle_name')),
                     jg.Dict.make_key('longName', jg.Atom('Long Name', str, '', var='long_name')),
-                    jg.Dict.make_key('shiftName', jg.empty_atom),
+                    jg.Dict.make_key('shiftName', jg.Atom('Shift Name', str, '', var='shift_name')),
                     jg.Dict.make_key('toToggle', jg.Atom('To Toggle', bool, False, var='to_toggle')),
                     jg.Dict.make_key('toBlink', jg.false_atom),
                     jg.Dict.make_key('toMsgScroll', jg.Atom('Message Scroll', bool, False, var='to_msg_scroll')),
@@ -90,6 +90,7 @@ bank_array_schema = \
                           jg.Atom('Bank Description', str, '', var='description')),
          jg.Dict.make_key('toDisplay',
                           jg.Atom('To Display', bool, False, var='to_display')),
+         jg.Dict.make_key('pageLimit', jg.zero_atom, required=False),
          jg.Dict.make_key('backgroundColor',
                           jg.Atom('Background Color', int, 127, var='background_color')),
          jg.Dict.make_key('textColor',
@@ -106,22 +107,23 @@ omniport_schema = \
              jg.Dict(
                  'omniport_data',
                  [jg.Dict.make_key('portNum', jg.identity_atom),
-                  jg.Dict.make_key('type', jg.Atom('Type', int, value=1)),
-                  jg.Dict.make_key('fixedSwTip', jg.zero_atom),
-                  jg.Dict.make_key('fixedSwRing', jg.zero_atom),
-                  jg.Dict.make_key('fixedSwTipRing', jg.zero_atom),
-                  jg.Dict.make_key('td1', jg.zero_atom),
-                  jg.Dict.make_key('td2', jg.zero_atom),
-                  jg.Dict.make_key('rd1', jg.zero_atom),
-                  jg.Dict.make_key('rd2', jg.zero_atom),
-                  jg.Dict.make_key('trd1', jg.zero_atom),
-                  jg.Dict.make_key('trd2', jg.zero_atom)]))])
+                  jg.Dict.make_key('type', jg.Atom('Type', int, 1, var='type')),
+                  jg.Dict.make_key('fixedSwTip', jg.Atom('Fixed SW Tip', int, 0, var='fixed_sw_tip')),
+                  jg.Dict.make_key('fixedSwRing', jg.Atom('Fixed SW Ring', int, 0, var='fixed_sw_ring')),
+                  jg.Dict.make_key('fixedSwTipRing', jg.Atom('Fixed SW Tip Ring', int, 0, var='fixed_sw_tip_ring')),
+                  jg.Dict.make_key('td1', jg.Atom('TD1', int, 0, var='td1')),
+                  jg.Dict.make_key('td2', jg.Atom('TD2', int, 0, var='td2')),
+                  jg.Dict.make_key('rd1', jg.Atom('RD1', int, 0, var='rd1')),
+                  jg.Dict.make_key('rd2', jg.Atom('RD2', int, 0, var='rd2')),
+                  jg.Dict.make_key('trd1', jg.Atom('TRD1', int, 0, var='trd1')),
+                  jg.Dict.make_key('trd2', jg.Atom('TRD2', int, 0, var='trd2'))]))],
+        model=backup_model.Omniport)
 
 omniports_schema = \
     jg.Dict(
         'omniports',
         [jg.Dict.make_key('type', jg.Atom('Type', str, value='omniport_all')),
-         jg.Dict.make_key('data', jg.List('Data List', 4, omniport_schema))])
+         jg.Dict.make_key('data', jg.List('Data List', 4, omniport_schema, var='omniports'))])
 
 usb_host_matrix_schema = \
     jg.Dict('usbHost',
@@ -397,7 +399,7 @@ backup_schema = \
          jg.Dict.make_key("deviceModel", jg.Atom('Device Model', int, value=6)),
          jg.Dict.make_key("downloadDate", jg.Atom('Download Date', str, download_date, var='download_date')),
          jg.Dict.make_key("hash", jg.Atom('Hash', int, 0, var='hash')),
-         jg.Dict.make_key("description", jg.empty_atom),
+         jg.Dict.make_key("description", jg.Atom('Description', str, '', var='description')),
          jg.Dict.make_key(
              "data",
              jg.Dict('data',

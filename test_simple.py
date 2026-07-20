@@ -153,6 +153,24 @@ class SimpleTestCase(unittest.TestCase):
         self.process_one_file("Utility", "yaml")
         self.process_one_file("Utility", "json")
 
+    # Regression coverage for newer-firmware/editor exports: previously-dropped extra
+    # bytes on PC messages (extra_byte), bank-level Set Toggle messages, and bank-level
+    # MIDI Clock messages (extra_data, plus bpm read while the clock is stopped).
+    def test_configs_extra_bytes(self):
+        self.process_one_file("ExtraBytes", "yaml")
+        self.process_one_file("ExtraBytes", "json")
+
+    # Regression coverage for newer-firmware/editor exports: fields that were previously
+    # forced to a constant - backup description, preset shiftName, and non-default
+    # omniport type/calibration bytes.
+    def test_configs_new_fields(self):
+        # skip_final=True: description and omniport config are backup-grammar-only fields
+        # (not modeled by the simple/intuitive layer), so they don't survive a full
+        # backup->simple->backup round trip and are expected to differ in the final raw-json
+        # comparison. shiftName IS modeled at the simple layer and is still fully verified.
+        self.process_one_file("NewFields", "yaml", True)
+        self.process_one_file("NewFields", "json", True)
+
     # def test_configs_select_exp_message(self):
     #     self.process_one_file("SelectExpMessage", "yaml", setlist=True)
     #     self.process_one_file("SelectExpMessage", "json", setlist=True)

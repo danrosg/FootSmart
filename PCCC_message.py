@@ -66,26 +66,36 @@ class PCModel(PCCCBaseModel):
         PCCCBaseModel.build_from_backup(simple_message, backup_message)
 
     # The PC message does not require a channel for the intuitive/config, but it does for the backup and simple formats
+    # extra_byte is the second data byte of the raw message. It is unused by ordinary PC messages (always 0/absent),
+    # but some presets have a non-zero value here, so it is preserved rather than silently dropped on round-trip.
     @staticmethod
     def get_case_keys():
         return [PCModel,
                 jg.SwitchDict.make_key('number', jg.Atom('Number', int, var='number')),
-                jg.SwitchDict.make_key('channel', jg.Atom('Channel', int, var='channel'), required=True)]
+                jg.SwitchDict.make_key('channel', jg.Atom('Channel', int, var='channel'), required=True),
+                jg.SwitchDict.make_key('extra_byte', jg.Atom('Extra Byte', int, 0, var='extra_byte'))]
 
     def __init__(self):
         super().__init__()
+        self.extra_byte = None
 
     def __eq__(self, other):
-        result = isinstance(other, PCModel) and self.eq_common(other)
+        result = (isinstance(other, PCModel) and self.eq_common(other) and
+                  self.extra_byte == other.extra_byte)
         if not result:
             self.modified = True
         return result
 
     def from_backup(self, channel, backup_message):
-        return self.from_backup_common(channel, backup_message)
+        name = self.from_backup_common(channel, backup_message)
+        if backup_message.msg_array_data is not None and backup_message.msg_array_data[1] is not None:
+            self.extra_byte = backup_message.msg_array_data[1]
+        return name
 
     def to_backup(self, backup_message, _bank_catalog, _simple_bank, _simple_preset):
         self.to_backup_common(backup_message)
+        if self.extra_byte is not None:
+            backup_message.msg_array_data[1] = self.extra_byte
 
 
 class CCModel(PCCCBaseModel):

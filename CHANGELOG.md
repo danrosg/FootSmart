@@ -1,5 +1,17 @@
 
 # Change Log
+## [1.2.0]
+- Fixed: backup grammar rejected valid backups from newer firmware/editor versions that populate previously-unmodeled fields:
+  - Bank `pageLimit` field
+  - Preset `shiftName` (shifted-display label) - now round-trips through both the backup grammar and the simple grammar/model instead of being forced empty
+  - Omniport (expression/aux jack) per-port type and calibration bytes - added a proper `Omniport` model instead of requiring all-default values
+  - Top-level backup `description` field - now captured instead of forced empty
+- Fixed: a preset/bank message list with a non-contiguous gap (an "unused" slot between two real messages) crashed `--backup-to-simple` with a `switch_dict_bad_switch` error. Added the missing case, and fixed a related crash in `grammar.py`'s `DictBase.gen_keys` when a switch dict's model is `None`.
+- Fixed: silent data loss on round-trip for a few message types that only had part of their raw data modeled:
+  - PC messages now preserve their second data byte (`extra_byte`) instead of dropping it
+  - Bank-level "Set Toggle" messages now preserve bytes beyond the documented preset bitmap (`extra_data`)
+  - Bank-level "MIDI Clock" messages now preserve bytes beyond bpm/flags (`extra_data`), and now read/restore bpm even when the clock is stopped (previously only read when not stopped, even though present in the data)
+- All fixes verified with a full byte-for-byte round-trip fidelity check (backup -> simple -> backup) against real 128-bank exports from a MC6 Pro on firmware 3.13.6.
 ## [1.1.0]
 - Added controller/global settings for messages, groups, and initializing
 ## [1.0.1] - 2025-03-13
