@@ -237,7 +237,7 @@ class DictBase(GrammarNode):
             found_keys += DictBase.gen_key(grammar, model, model_is_dict, key, list_pos, result, variable_result)
 
         if model_var is not None:
-            switched_model = model.get_var(model_var)
+            switched_model = model.get_var(model_var) if model is not None else None
             for key in model_keys:
                 found_keys += DictBase.gen_key(grammar, switched_model, model_is_dict, key, list_pos, result,
                                                variable_result)

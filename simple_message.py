@@ -629,10 +629,13 @@ class MIDIClockModel(jg.GrammarModel):
         self.stop_clock = None
         self.bpm = None
         self.bpm_decimal = None
+        # Bytes 3-17 are not otherwise understood/used, but some presets have non-zero values there
+        # (seen even when the clock is stopped), so they are preserved rather than silently dropped.
+        self.extra_data = None
 
     def __eq__(self, other):
         result = isinstance(other, MIDIClockModel) and self.stop_clock == other.stop_clock and self.bpm == other.bpm
-        result = result and self.bpm_decimal == other.bpm_decimal
+        result = result and self.bpm_decimal == other.bpm_decimal and self.extra_data == other.extra_data
         if not result:
             self.modified = True
         return result
@@ -655,15 +658,18 @@ class MIDIClockModel(jg.GrammarModel):
                 name.append("Don't Stop MIDI Clock")
             if backup_message.msg_array_data[0] is not None:
                 raise IntuitiveException('bad_midi_clock', "Got a MIDI Clock message I cannot parse")
-            if not self.stop_clock:
-                bpm = backup_message.msg_array_data[1]
-                if bpm is None:
-                    bpm = 0
+            # bpm/bpm_decimal are read regardless of stop_clock, so a stopped clock's last tempo isn't lost
+            bpm = backup_message.msg_array_data[1]
+            if bpm is not None:
                 self.bpm = bpm
-                name.append(str(self.bpm))
                 bpm_decimal_index = (flags & 0b1100) >> 2
                 self.bpm_decimal = MIDIClockModel.bpm_decimal_enum[bpm_decimal_index]
-                name.append(self.bpm_decimal)
+            if not self.stop_clock:
+                name.append(str(self.bpm if self.bpm is not None else 0))
+                name.append(self.bpm_decimal if self.bpm_decimal is not None else MIDIClockModel.bpm_decimal_default)
+            rest = backup_message.msg_array_data[3:18]
+            if any(byte is not None for byte in rest):
+                self.extra_data = [byte if byte is not None else 0 for byte in rest]
         return ':'.join(name)
 
     def to_backup(self, backup_message, _bank_catalog, _simple_bank, _simple_preset):
@@ -680,6 +686,9 @@ class MIDIClockModel(jg.GrammarModel):
             flags = flags | 0b10
         if flags != 0:
             backup_message.msg_array_data[2] = flags
+        if self.extra_data is not None:
+            for pos, byte in enumerate(self.extra_data):
+                backup_message.msg_array_data[3 + pos] = byte
 
 
 class MIDIClockTapMenuModel(jg.GrammarModel):
@@ -1300,9 +1309,13 @@ class SetToggleModel(jg.GrammarModel):
         super().__init__('SetToggleModel')
         self.position = None
         self.presets = None
+        # Bytes 4-17 of msg_array_data are not otherwise understood/used, but some presets have non-zero
+        # values there (e.g. exp preset related bits), so they are preserved rather than silently dropped.
+        self.extra_data = None
 
     def __eq__(self, other):
-        result = isinstance(other, SetToggleModel) and self.position == other.position and self.presets == other.presets
+        result = (isinstance(other, SetToggleModel) and self.position == other.position and
+                  self.presets == other.presets and self.extra_data == other.extra_data)
         if not result:
             self.modified = True
         return result
@@ -1334,6 +1347,9 @@ class SetToggleModel(jg.GrammarModel):
         if backup_message.msg_array_data is not None:
             self.from_backup_presets(backup_message, backup_bank)
             name += ','.join(self.presets)
+            rest = backup_message.msg_array_data[4:18]
+            if any(byte is not None for byte in rest):
+                self.extra_data = [byte if byte is not None else 0 for byte in rest]
         return name
 
     def from_backup_presets(self, backup_message, backup_bank):
@@ -1354,6 +1370,9 @@ class SetToggleModel(jg.GrammarModel):
             preset_number = simple_bank.lookup_preset(preset)
             preset_map = self.preset_mapping[preset_number]
             backup_message.msg_array_data[preset_map[0]] |= preset_map[1]
+        if self.extra_data is not None:
+            for pos, byte in enumerate(self.extra_data):
+                backup_message.msg_array_data[4 + pos] = byte
 
 
 # TODO: Can we get rid of simple_bank?
@@ -1870,6 +1889,8 @@ simple_preset_common_keys = [jg.Dict.make_key('trigger',
                                                       var='toggle_state'))]
 
 transition_message_case_keys = {
+    # An empty/gap message slot (e.g. a non-contiguous position in a preset's message list)
+    'unused': [],
     'PC Multichannel': [PCMultichannelModel,
                         jg.SwitchDict.make_key('multichannel',
                                                jg.List('Multichannel', 0, jg.Atom('Channel', int),
@@ -1898,7 +1919,9 @@ transition_message_case_keys = {
                    jg.SwitchDict.make_key('bpm_decimal',
                                           jg.Enum('BPM Decimal', MIDIClockModel.bpm_decimal_enum,
                                                   MIDIClockModel.bpm_decimal_default,
-                                                  var='bpm_decimal'))],
+                                                  var='bpm_decimal')),
+                   jg.SwitchDict.make_key('extra_data',
+                                          jg.List('Extra Data', 15, jg.Atom('Byte', int, 0), var='extra_data'))],
     'MIDI Clock Tap Menu': [MIDIClockTapMenuModel,
                             jg.SwitchDict.make_key('use_current_bpm',
                                                    jg.Atom('Use Current BPM', bool, var='use_current_bpm')),
@@ -1944,7 +1967,9 @@ transition_message_case_keys = {
                                                   SetToggleModel.set_toggle_default,
                                                   var='position')),
                    jg.SwitchDict.make_key('presets',
-                                          jg.List('Presets', 24, jg.Atom('Preset', str), var='presets'))],
+                                          jg.List('Presets', 24, jg.Atom('Preset', str), var='presets')),
+                   jg.SwitchDict.make_key('extra_data',
+                                          jg.List('Extra Data', 14, jg.Atom('Byte', int, 0), var='extra_data'))],
     'Trigger Messages': [TriggerMessagesModel,
                          jg.SwitchDict.make_key('preset', jg.Atom('Preset', str, var='preset')),
                          jg.SwitchDict.make_key('messages',
