@@ -90,7 +90,7 @@ bank_array_schema = \
                           jg.Atom('Bank Description', str, '', var='description')),
          jg.Dict.make_key('toDisplay',
                           jg.Atom('To Display', bool, False, var='to_display')),
-         jg.Dict.make_key('pageLimit', jg.zero_atom),
+         jg.Dict.make_key('pageLimit', jg.zero_atom, required=False),
          jg.Dict.make_key('backgroundColor',
                           jg.Atom('Background Color', int, 127, var='background_color')),
          jg.Dict.make_key('textColor',
@@ -107,7 +107,7 @@ omniport_schema = \
              jg.Dict(
                  'omniport_data',
                  [jg.Dict.make_key('portNum', jg.identity_atom),
-                  jg.Dict.make_key('type', jg.Atom('Type', int, 0, var='type')),
+                  jg.Dict.make_key('type', jg.Atom('Type', int, 1, var='type')),
                   jg.Dict.make_key('fixedSwTip', jg.Atom('Fixed SW Tip', int, 0, var='fixed_sw_tip')),
                   jg.Dict.make_key('fixedSwRing', jg.Atom('Fixed SW Ring', int, 0, var='fixed_sw_ring')),
                   jg.Dict.make_key('fixedSwTipRing', jg.Atom('Fixed SW Tip Ring', int, 0, var='fixed_sw_tip_ring')),

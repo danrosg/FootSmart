@@ -658,15 +658,17 @@ class MIDIClockModel(jg.GrammarModel):
                 name.append("Don't Stop MIDI Clock")
             if backup_message.msg_array_data[0] is not None:
                 raise IntuitiveException('bad_midi_clock', "Got a MIDI Clock message I cannot parse")
-            # bpm/bpm_decimal are read regardless of stop_clock, so a stopped clock's last tempo isn't lost
+            # bpm is read regardless of stop_clock, so a stopped clock's last tempo isn't lost.
+            # bpm_decimal is only meaningful (and only computed/named) while the clock is running, matching
+            # the pre-existing behavior, to avoid it round-tripping differently than its schema default.
             bpm = backup_message.msg_array_data[1]
             if bpm is not None:
                 self.bpm = bpm
+            if not self.stop_clock:
                 bpm_decimal_index = (flags & 0b1100) >> 2
                 self.bpm_decimal = MIDIClockModel.bpm_decimal_enum[bpm_decimal_index]
-            if not self.stop_clock:
                 name.append(str(self.bpm if self.bpm is not None else 0))
-                name.append(self.bpm_decimal if self.bpm_decimal is not None else MIDIClockModel.bpm_decimal_default)
+                name.append(self.bpm_decimal)
             rest = backup_message.msg_array_data[3:18]
             if any(byte is not None for byte in rest):
                 self.extra_data = [byte if byte is not None else 0 for byte in rest]
